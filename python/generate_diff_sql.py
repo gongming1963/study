@@ -6,31 +6,17 @@ sys.setdefaultencoding('utf-8')
 import traceback
 from optparse import OptionParser
 
-PARAMS = {'ori_table':'detail.compdeal_daily',
-        'new_table':'ba_cis.compdeal_daily_todetect',
-        'primary_key':['date', 'dealid'],
-        'keys':['addtime','volume','status','ord','origin' ],
-        'diff_key':['']}
-
-#select
-#    count(*) total_num,
-#    sum(if(c.compdealshopid is not NULL, 1, 0)) origin_num,
-#    sum(if(s.compdealshopid is not NULL, 1, 0)) new_num,
-#    sum(if(c.dealid = s.dealid,1,0)) dealid_num,
-#    sum(if(c.businessname = s.businessname,1,0))  businessname_num,
-#    sum(if(c.address = s.address,1,0))  address_num,
-#    sum(if(c.dpshopid = s.dpshopid,1,0))  dpshopid_num,
-#    sum(if(c.phone = s.phone,1,0))  phone_num,
-#    sum(if(c.website = s.website,1,0))  website_num,
-#    sum(if(c.openinghour = s.openinghour,1,0))  openinghour_num,
-#    sum(if(c.trafficinfo = s.trafficinfo,1,0))  trafficinfo_num,
-#    sum(if(c.latlng = s.latlng,1,0))  latlng_num,
-#    sum(if(c.modtime = s.modtime,1,0))  modtime_num
-#from
-#    test.compdealshop2 c  
-#FULL OUTER JOIN
-#    test.compdealshop s          
-#        on c.compdealshopid = s.compdealshopid ;
+#PARAMS = {'ori_table':'detail.compdeal_daily',
+#        'new_table':'ba_cis.compdeal_daily_todetect',
+#        'primary_key':['date', 'dealid'],
+#        'keys':['addtime','volume','status','ord','origin' ],
+#        'diff_key':['']}
+#
+PARAMS = {'ori_table':'test.compdeal_daily',
+        'new_table':'summary.compdeal_daily',
+        'primary_key':['date', 'siteid', 'cityid'],
+        'keys':['date','siteid','websiteid','cityid','dealcount','coupondealcount','deliverydealcount','bigdealcount','bigdealdealcount','showdays','couponshowdays','deliveryshowdays','bigdealshowdays','quantity','couponquantity','deliveryquantity','bigdealquantity','revenue','couponrevenue','deliveryrevenue','bigdealrevenue','revenue_origin','couponrevenue_origin','deliveryrevenue_origin','bigdealrevenue_origin','totalvalue','totalcut','bigdealtotalvalue','bigdealtotalcut','coupontotalvalue','coupontotalcut','deliverytotalvalue','deliverytotalcut'],
+        'diff_key':['dealcount']}
 
 def generate_sample_sql():
     """
@@ -40,11 +26,11 @@ def generate_sample_sql():
     key_item = []
     table_list = ['ori', 'new']
     KEY_PATTERN = "%(table_name)s.%(key_name)s %(table_name)s_%(key_name)s"
-    for table in table_list:
-        for key in PARAMS['primary_key']:
+    for key in PARAMS['keys']:
+        for table in table_list:
             key_item.append(KEY_PATTERN % {'table_name':table, 'key_name':key})
     sample_sql += ',\n'.join(key_item)
-    sample_sql += " from %(ori_table)s ori FULL OUTER JOIN %(new_table)s new ON " % PARAMS
+    sample_sql += " \nfrom %(ori_table)s ori FULL OUTER JOIN %(new_table)s new \nON " % PARAMS
 
     on_item = []
     ON_PATTERN = "ori.%(primary_key)s = new.%(primary_key)s"
@@ -54,9 +40,9 @@ def generate_sample_sql():
 
     where_item = []
     WHERE_PATTERN = "ori.%(diff_key)s != new.%(diff_key)s"
-    for primary_key in PARAMS['diff_key']:
-        on_item.append(ON_PATTERN % {'primary_key':primary_key})
-    sample_sql += "where " + ' and '.join(on_item) + " limit 1000;"
+    for diff_key in PARAMS['diff_key']:
+        on_item.append(WHERE_PATTERN % {'diff_key':diff_key})
+    sample_sql += " \nwhere " + ' and '.join(on_item) + " \nlimit 1000;"
 
     print sample_sql
 
@@ -75,7 +61,7 @@ def generate_diff_sql():
         key_item.append(KEY_DIFF % {'key':key})
     diff_sql += ',\n'.join(key_item)
 
-    diff_sql += " from %(ori_table)s ori FULL OUTER JOIN %(new_table)s new ON " % PARAMS
+    diff_sql += " \nfrom %(ori_table)s ori FULL OUTER JOIN %(new_table)s new \nON " % PARAMS
 
     on_item = []
     ON_PATTERN = "ori.%(primary_key)s = new.%(primary_key)s"
